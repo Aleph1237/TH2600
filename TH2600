@@ -1,61 +1,89 @@
-    SEI             ; Disable interrupts
-    CLD             ; Clear decimal mode
-    LDX #$FF
-    TXS             ; Set up the stack pointer
-    INX             ; X register to 0
+        processor 6502
+        include "vcs.h"
+        include "macro.h"
+        org $F000
 
-    STX VBLANK      ; Disable vertical blanking
-    STX COLUBK      ; Set background color to black
-    LDA #$02
-    STA COLUPF      ; Set playfield color
-    LDA #$01
-    STA COLUP0      ; Set player 0 color
+Start:  SEI
+        CLD
+        LDX #$FF
+        TXS
+        INX
 
-MainLoop:
-    LDA #$2C        ; Load A register with the value for a visible square
-    STA GRP0        ; Set player 0 graphics register
+        ; Clear all TIA registers
+        LDA #$00
+        STA VSYNC
+        STA VBLANK
+        STA WSYNC
+        STA TIA.WSYNC
+        STA NUSIZ0
+        STA COLUP0
+        STA COLUP1
+        STA COLUPF
+        STA COLUBK
+        STA CTRLPF
+        STA REFP0
+        STA REFP1
+        STA PF0
+        STA PF1
+        STA PF2
+        STA RESP0
+        STA RESP1
+        STA RESM0
+        STA RESM1
+        STA RESBL
+        STA AUDC0
+        STA AUDC1
+        STA AUDF0
+        STA AUDF1
+        STA AUDV0
+        STA AUDV1
+        STA GRP0
+        STA GRP1
+        STA ENAM0
+        STA ENAM1
+        STA ENABL
+        STA HMP0
+        STA HMP1
+        STA HMM0
+        STA HMM1
+        STA HMBL
+        STA VDELP0
+        STA VDELP1
+        STA VDELBL
+        STA RESMP0
+        STA RESMP1
+        STA HMOVE
+        STA HMCLR
+        STA CXCLR
 
-    LDA #$00
-    STA VSYNC       ; Start vertical sync
-    STA VBLANK      ; End vertical sync, start vertical blank
+        ; Initialize game setup here
+        ; Example: Set background color, sprite colors, etc.
+        LDA #$2C
+        STA COLUP0      ; Set sprite color
+        LDA #$3C
+        STA COLUBK      ; Set background color
 
-    LDX #$FF        ; Delay for vertical blank
-DelayVBlank:
-    DEX
-    BNE DelayVBlank
+        ; Main loop
+MainLoop
+        ; Example game logic here
+        ; Movement, collision detection, etc.
 
-    LDA #$00
-    STA VBLANK      ; End vertical blank
+        ; Wait for vertical blank to finish frame
+        LDA #$02
+        STA VBLANK
 
-    ; New code for vertical movement
-    LDY #$00        ; Y register as a counter for movement delay
-MovementLoop:
-    INY             ; Increase Y register
-    CPY MovementDelay ; Compare Y with our movement delay
-    BNE MovementLoop  ; Loop until Y equals MovementDelay
+        ; Here you would adjust the sprite position based on lookup table
+        ; Simplified: Use Y register for delay to simulate vertical movement
+        LDX #$00
+VerticalMove
+        INX
+        CPX #$10        ; Adjust CPX value for different "heights" of movement
+        BNE VerticalMove
 
-    LDX #$1F        ; Duration to display the square
-DrawLoop:
-    STA WSYNC       ; Wait for the start of the next scan line
-    STA GRP0        ; Display player 0 graphics (the square)
-    DEX
-    BNE DrawLoop
+        LDA #$00
+        STA VBLANK
 
-    LDA #$02
-    STA VBLANK      ; Start vertical blank to finish the frame
+        JMP MainLoop    ; Repeat the main loop
 
-    JMP MainLoop    ; Loop back to start
-
-; TIA register addresses
-VSYNC  = $00
-VBLANK = $01
-COLUBK = $09
-COLUP0 = $06
-COLUPF = $08
-GRP0   = $1B
-WSYNC  = $02
-
-; Movement parameters
-MovementDelay = $0A ; Adjust this value for different speeds/heights
-
-    END             ; End of the program
+        org $FFFC       ; Reset vector
+        .word Start     ; Points to the start of the program
